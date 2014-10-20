@@ -1,0 +1,15 @@
+## Syntax Coloring Map For BlyssController
+
+# Datatypes (KEYWORD1)
+
+BlyssController	KEYWORD1
+
+# Methods and Functions (KEYWORD2)
+
+switchOn		KEYWORD2
+switchOff		KEYWORD2
+enableTransmit		KEYWORD2
+disableTransmit		KEYWORD2
+setKey			KEYWORD2
+
+# Constants (LITERAL1)
