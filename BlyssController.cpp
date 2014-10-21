@@ -2,6 +2,25 @@
   BlyssController - Arduino libary for remote control blyss/liveez components
 */
 
+#include <stdlib.h>
+
+#if defined(ARDUINO) && ARDUINO >= 100
+  #include "Arduino.h"
+#elif defined(ENERGIA) // LaunchPad, FraunchPad and StellarPad specific
+  #include "Energia.h"
+#else
+  #include <wiringPi.h>
+  #include <stdint.h>
+  #include <ctype.h>
+  #include "binary.h"
+
+  #define bitRead(value, bit) (((value) >> (bit)) & 0x01)
+  #define bitSet(value, bit) ((value) |= (1UL << (bit)))
+  #define bitClear(value, bit) ((value) &= ~(1UL << (bit)))
+  #define bitWrite(value, bit, bitvalue) (bitvalue ? bitSet(value, bit) : bitClear(value, bit))
+
+#endif
+
 #include "BlyssController.h"
 
 /* -------------------------------------------------------- */
@@ -11,10 +30,10 @@
 /* Time constants */
 const unsigned long H_TIME = 2400; // Header delay
 const unsigned long T_TIME = 400;  // 1/3 frame delay
-const byte nb_frames = 13; // Numbers of frames per command
+const char nb_frames = 13; // Numbers of frames per command
 
 /** "Rolling code" (normally avoid frame spoofing) */
-byte RF_ROLLING_CODE[] = {
+char RF_ROLLING_CODE[] = {
   0x98, 0xDA, 0x1E, 0xE6, 0x67
 };
 
@@ -63,7 +82,7 @@ void BlyssController::send_zero() {
  *
  * @param data Source data to process and sent
  */
-void BlyssController::send_quarter_MSB(byte data) {
+void BlyssController::send_quarter_MSB(char data) {
   (bitRead(data, 7)) ? this->send_one() : this->send_zero();
   (bitRead(data, 6)) ? this->send_one() : this->send_zero();
   (bitRead(data, 5)) ? this->send_one() : this->send_zero();
@@ -75,7 +94,7 @@ void BlyssController::send_quarter_MSB(byte data) {
  *
  * @param data Source data to process and sent
  */
-void BlyssController::send_quarter_LSB(byte data) {
+void BlyssController::send_quarter_LSB(char data) {
   (bitRead(data, 3)) ? this->send_one() : this->send_zero();
   (bitRead(data, 2)) ? this->send_one() : this->send_zero();
   (bitRead(data, 1)) ? this->send_one() : this->send_zero();
@@ -86,7 +105,7 @@ void BlyssController::send_quarter_LSB(byte data) {
  * Generate next valid token for RF transmission
  */
 void BlyssController::generate_token() {
-  static byte last_token = 0x7D;
+  static char last_token = 0x7D;
   this->buffer[5] = (this->buffer[5] & 0xF0) | ((last_token & 0xF0) >> 4);
   this->buffer[6] = (last_token & 0x0F) << 4;
   last_token += 10;
@@ -96,7 +115,7 @@ void BlyssController::generate_token() {
  * Generate next valid rolling code for RF transmission
  */
 void BlyssController::generate_rolling_code() {
-  static byte i = 0;
+  static char i = 0;
   this->buffer[4] = (this->buffer[4] & 0xF0) | ((RF_ROLLING_CODE[i] & 0xF0) >> 4);
   this->buffer[5] = (this->buffer[5] & 0x0F) |(RF_ROLLING_CODE[i] & 0x0F) << 4;
   if(++i >= sizeof(RF_ROLLING_CODE)) i = 0;
@@ -107,7 +126,7 @@ void BlyssController::generate_rolling_code() {
  *
  * @param status Status to use (ON or OFF)
  */
-void BlyssController::set_status(byte status) {
+void BlyssController::set_status(char status) {
   if(!status) this->buffer[4] = (this->buffer[4] & 0x0F) | 0x10;
   else this->buffer[4] &= 0x0F;
 }
@@ -119,7 +138,7 @@ void BlyssController::set_status(byte status) {
  */
 void BlyssController::send_buffer() {
   this->send_header();
-  for(byte i = 0; i < 6; ++i) {
+  for(char i = 0; i < 6; ++i) {
     this->send_quarter_MSB(this->buffer[i]);
     this->send_quarter_LSB(this->buffer[i]);
   }
@@ -131,7 +150,7 @@ void BlyssController::send_buffer() {
  * Send a complete frame-data buffer n times to be hooked by the target receiver
  */
 void BlyssController::send_command() {
-  for(byte i = 0; i < nb_frames; ++i)
+  for(char i = 0; i < nb_frames; ++i)
     this->send_buffer();
 }
 
@@ -141,7 +160,7 @@ void BlyssController::send_command() {
  * @param key Pointer to a RF key-data buffer
  * @param overwrite Set to true if you want to overwrite channel data and use data from key buffer
  */
-void BlyssController::setKey(byte *key, bool overwrite) {
+void BlyssController::setKey(char *key, bool overwrite) {
   this->buffer[0] = 0xFE;
   if(overwrite)
     this->buffer[1] = key[0];
@@ -159,7 +178,7 @@ void BlyssController::setKey(byte *key, bool overwrite) {
  *
  * @param key Pointer to a RF key-data buffer
  */
-void BlyssController::setKey(byte *key) {
+void BlyssController::setKey(char *key) {
   this->setKey(key, true);
 }
 
@@ -169,7 +188,7 @@ void BlyssController::setKey(byte *key) {
  *
  * @param channel Target channel
  */
-void BlyssController::set_channel(byte channel) {
+void BlyssController::set_channel(char channel) {
   this->buffer[3] = (this->buffer[3] & 0xF0) | (channel & 0x0F);
 }
 
@@ -178,7 +197,7 @@ void BlyssController::set_channel(byte channel) {
  *
  * @param channel Target channel
  */
-void BlyssController::set_global_channel(byte channel) {
+void BlyssController::set_global_channel(char channel) {
   this->buffer[1] = (this->buffer[1] & 0x0F) | ((channel << 4) & 0xF0);
 }
 
@@ -200,7 +219,7 @@ void BlyssController::switchOff(int channel) {
     this->set_channel_status(channel, OFF);
 }
 
-void BlyssController::set_channel_status(int channel, byte status) {
+void BlyssController::set_channel_status(int channel, char status) {
 
   this->set_channel(CH_ALL);
   this->set_status(status);
