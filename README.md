@@ -33,12 +33,14 @@ The program *send* require the RF-key of the remote paired with the device you w
 
 After getting your RF-key, use the send progam as following :
 
-```bash
-./sudo send 735AC8 3 0
-````
 This command should turn off the device on channel 3
 
 ```bash
-./sudo send 735AC8 0 1
+sudo ./send 735AC8 3 0
 ````
+
 This command should turn on any device paired with the 735AC8 remote
+
+```bash
+sudo ./send 735AC8 0 1
+````
