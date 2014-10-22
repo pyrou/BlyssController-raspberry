@@ -7,7 +7,7 @@ This code is based on the hard work on [reverse engineering achieved by Skywodd]
 
 
 ### Dependencies
-wiringPi : [https://projects.drogon.net/raspberry-pi/wiringpi/]()
+wiringPi : [https://projects.drogon.net/raspberry-pi/wiringpi/](https://projects.drogon.net/raspberry-pi/wiringpi/)
 
 ### Building WiringPi
 
